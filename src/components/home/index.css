@@ -1,0 +1,26 @@
+.name {
+  font-size: 20px;
+}
+.address {
+  font-size: 15px;
+  color: #817d7d;
+}
+.data-cont {
+  width: 20vw;
+  flex-wrap: wrap;
+}
+.border-length {
+  border-radius: 5px;
+}
+.slots-font {
+  font-size: 25px;
+}
+.date-wiseDate {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px,
+    rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px,
+    rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
