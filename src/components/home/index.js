@@ -7,9 +7,7 @@ export default class Home extends Component {
     states: [],
     districts: [],
     districtId: "",
-    searchedData: [],
-    searchedData1: [],
-    searchedData2: [],
+    searchedData: {},
     todayDate: 0,
     pincodeNo: "",
   };
@@ -20,9 +18,16 @@ export default class Home extends Component {
   changeDistrictId = (id) => {
     this.setState({ districtId: id });
   };
-  getDataFromUrl = async (date) => {
+  getDataFromDistrict = async (date) => {
     const { districtId } = this.state;
     const dataUrl = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id=${districtId}&date=${date}`;
+    const response = await fetch(dataUrl);
+    const data = await response.json();
+    return data;
+  };
+  getDataFromPincode = async (date) => {
+    const { pincodeNo } = this.state;
+    const dataUrl = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=${pincodeNo}&date=${date}`;
     const response = await fetch(dataUrl);
     const data = await response.json();
     return data;
@@ -35,9 +40,9 @@ export default class Home extends Component {
     const formedDate2 = date.getDate() + 1 + "-" + dateformater;
     const formedDate3 = date.getDate() + 2 + "-" + dateformater;
     console.log(formedDate3);
-    const data = await this.getDataFromUrl(formedDate1);
-    const data1 = await this.getDataFromUrl(formedDate2);
-    const data2 = await this.getDataFromUrl(formedDate3);
+    const data = await this.getDataFromDistrict(formedDate1);
+    const data1 = await this.getDataFromDistrict(formedDate2);
+    const data2 = await this.getDataFromDistrict(formedDate3);
     this.setState({
       searchedData: {
         data: data.sessions,
@@ -60,20 +65,17 @@ export default class Home extends Component {
     const formedDate1 = date.getDate() + "-" + dateformater;
     const formedDate2 = date.getDate() + 1 + "-" + dateformater;
     const formedDate3 = date.getDate() + 2 + "-" + dateformater;
-    console.log(formedDate3);
-    const dataUrl = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=${pincodeNo}&date=${formedDate1}`;
-    const response = await fetch(dataUrl);
-    const data = await response.json();
-    const dataUrl1 = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=${pincodeNo}&date=${formedDate2}`;
-    const response1 = await fetch(dataUrl1);
-    const data1 = await response1.json();
-    const dataUrl2 = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=${pincodeNo}&date=${formedDate3}`;
-    const response2 = await fetch(dataUrl2);
-    const data2 = await response2.json();
+
+    const data = await this.getDataFromPincode(formedDate1);
+    const data1 = await this.getDataFromPincode(formedDate2);
+    const data2 = await this.getDataFromPincode(formedDate3);
+    console.log(data);
     this.setState({
-      searchedData: data.sessions,
-      searchedData2: data2.sessions,
-      searchedData1: data1.sessions,
+      searchedData: {
+        data: data.sessions,
+        data2: data2.sessions,
+        data1: data1.sessions,
+      },
       todayDate: date.getDate(),
     });
   };
@@ -111,7 +113,7 @@ export default class Home extends Component {
             }}
           >
             <option value="1">Select District</option>
-            {districts?.map((each, index) => {
+            {districts?.map((each) => {
               return (
                 <option key={each.district_id} value={each.district_id}>
                   {each.district_name}
@@ -126,24 +128,92 @@ export default class Home extends Component {
       );
     } else {
       return (
-        <div>
-          <input
-            value={this.state.pincodeNo}
-            type="text"
-            placeholder="Enter your PIN"
-            onChange={(event) => {
-              this.setState({ pincodeNo: event.target.value });
-            }}
-          />
-          <button className="btn btn-info" onClick={this.fetchByPincode}>
-            Search
-          </button>
-        </div>
+        <>
+          <div className="m-auto mt-3 w-75 d-flex flex-row justify-content-center">
+            <input
+              value={this.state.pincodeNo}
+              type="text"
+              placeholder="Enter your PIN"
+              onChange={(event) => {
+                this.setState({ pincodeNo: event.target.value });
+              }}
+            />
+
+            <button className="btn btn-info" onClick={this.fetchByPincode}>
+              Search
+            </button>
+          </div>
+          {this.state.pincodeNo.length < 6 &&
+          this.state.pincodeNo.length > 0 ? (
+            <p className="text-danger text-center">enter correct pincode</p>
+          ) : (
+            ""
+          )}
+        </>
       );
     }
   };
+  changeDataToPrev = async () => {
+    const { todayDate, districtId } = this.state;
+    const date = new Date();
+    const dateformater = date.getMonth() + 1 + "-" + date.getFullYear();
+    const formedDate1 = todayDate - 1 + "-" + dateformater;
+    const formedDate2 = todayDate - 2 + "-" + dateformater;
+    const formedDate3 = todayDate - 3 + "-" + dateformater;
+    console.log(formedDate3);
+    const data =
+      districtId !== ""
+        ? await this.getDataFromDistrict(formedDate1)
+        : await this.getDataFromPincode(formedDate1);
+    const data1 =
+      districtId !== ""
+        ? await this.getDataFromDistrict(formedDate2)
+        : await this.getDataFromPincode(formedDate2);
+    const data2 =
+      districtId !== ""
+        ? await this.getDataFromDistrict(formedDate3)
+        : await this.getDataFromPincode(formedDate3);
+    this.setState({
+      searchedData: {
+        data: data.sessions,
+        data2: data2.sessions,
+        data1: data1.sessions,
+      },
+      todayDate: todayDate + 1,
+    });
+  };
+  changeDataToNext = async () => {
+    const { todayDate, districtId } = this.state;
+    const date = new Date();
+    const dateformater = date.getMonth() + 1 + "-" + date.getFullYear();
+    const formedDate1 = todayDate + 1 + "-" + dateformater;
+    const formedDate2 = todayDate + 2 + "-" + dateformater;
+    const formedDate3 = todayDate + 3 + "-" + dateformater;
+    console.log(formedDate3);
+    const data =
+      districtId !== ""
+        ? await this.getDataFromDistrict(formedDate1)
+        : await this.getDataFromPincode(formedDate1);
+    const data1 =
+      districtId !== ""
+        ? await this.getDataFromDistrict(formedDate2)
+        : await this.getDataFromPincode(formedDate2);
+    const data2 =
+      districtId !== ""
+        ? await this.getDataFromDistrict(formedDate3)
+        : await this.getDataFromPincode(formedDate3);
+    this.setState({
+      searchedData: {
+        data: data.sessions,
+        data2: data2.sessions,
+        data1: data1.sessions,
+      },
+      todayDate: todayDate + 1,
+    });
+  };
   displayData = () => {
     const { searchedData, todayDate } = this.state;
+    console.log(searchedData);
     const date = new Date();
     const dateformater = date.getMonth() + 1 + "-" + date.getFullYear();
     return (
@@ -151,7 +221,7 @@ export default class Home extends Component {
         <div class="card">
           <div class="card-header">
             <div class="row">
-              <div class="col-3 text-end pt-2">
+              <div class="col-3 text-end pt-2" onClick={this.changeDataToPrev}>
                 <h2>〈</h2>
               </div>
               <div class="col">
@@ -182,7 +252,7 @@ export default class Home extends Component {
                 </div>
               </div>
 
-              <div class="col-auto pt-2">
+              <div class="col-auto pt-2" onClick={this.changeDataToNext}>
                 <h2>〉</h2>
               </div>
             </div>
@@ -190,6 +260,7 @@ export default class Home extends Component {
         </div>
 
         {searchedData.data?.map((each) => {
+          console.log(each);
           const dateValues1 = searchedData.data1?.filter(
             (each1) => each.center_id === each1.center_id
           )[0];
