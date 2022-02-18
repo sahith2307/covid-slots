@@ -20,6 +20,13 @@ export default class Home extends Component {
   changeDistrictId = (id) => {
     this.setState({ districtId: id });
   };
+  getDataFromUrl = async (date) => {
+    const { districtId } = this.state;
+    const dataUrl = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id=${districtId}&date=${date}`;
+    const response = await fetch(dataUrl);
+    const data = await response.json();
+    return data;
+  };
   fetchSearchData = async () => {
     const { districtId } = this.state;
     const date = new Date();
@@ -28,19 +35,15 @@ export default class Home extends Component {
     const formedDate2 = date.getDate() + 1 + "-" + dateformater;
     const formedDate3 = date.getDate() + 2 + "-" + dateformater;
     console.log(formedDate3);
-    const dataUrl = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id=${districtId}&date=${formedDate1}`;
-    const response = await fetch(dataUrl);
-    const data = await response.json();
-    const dataUrl1 = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id=${districtId}&date=${formedDate2}`;
-    const response1 = await fetch(dataUrl1);
-    const data1 = await response1.json();
-    const dataUrl2 = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id=${districtId}&date=${formedDate3}`;
-    const response2 = await fetch(dataUrl2);
-    const data2 = await response2.json();
+    const data = await this.getDataFromUrl(formedDate1);
+    const data1 = await this.getDataFromUrl(formedDate2);
+    const data2 = await this.getDataFromUrl(formedDate3);
     this.setState({
-      searchedData: data.sessions,
-      searchedData2: data2.sessions,
-      searchedData1: data1.sessions,
+      searchedData: {
+        data: data.sessions,
+        data2: data2.sessions,
+        data1: data1.sessions,
+      },
       todayDate: date.getDate(),
     });
   };
@@ -140,8 +143,7 @@ export default class Home extends Component {
     }
   };
   displayData = () => {
-    const { searchedData, searchedData1, searchedData2, todayDate } =
-      this.state;
+    const { searchedData, todayDate } = this.state;
     const date = new Date();
     const dateformater = date.getMonth() + 1 + "-" + date.getFullYear();
     return (
@@ -150,12 +152,7 @@ export default class Home extends Component {
           <div class="card-header">
             <div class="row">
               <div class="col-3 text-end pt-2">
-                <a
-                  href="javascript:;"
-                  class="text-decoration-none text-secondary"
-                >
-                  <h2>〈</h2>
-                </a>
+                <h2>〈</h2>
               </div>
               <div class="col">
                 <div class="card my-2">
@@ -186,26 +183,21 @@ export default class Home extends Component {
               </div>
 
               <div class="col-auto pt-2">
-                <a
-                  href="javascript:;"
-                  class="text-decoration-none text-secondary"
-                >
-                  <h2>〉</h2>
-                </a>
+                <h2>〉</h2>
               </div>
             </div>
           </div>
         </div>
 
-        {searchedData?.map((each) => {
-          const dateValues1 = searchedData1?.filter(
+        {searchedData.data?.map((each) => {
+          const dateValues1 = searchedData.data1?.filter(
             (each1) => each.center_id === each1.center_id
           )[0];
-          const dateValues2 = searchedData2?.filter(
+          const dateValues2 = searchedData.data2?.filter(
             (each2) => each.center_id === each2.center_id
           )[0];
           const classForFee =
-            each.fee_type == "Free" ? "bg-success" : "bg-warning";
+            each.fee_type === "Free" ? "bg-success" : "bg-warning";
           const avileClass1 =
             each.available_capacity === undefined
               ? ""
@@ -215,7 +207,7 @@ export default class Home extends Component {
               ? "text-success"
               : "text-danger";
           const avileClass2 =
-            each.available_capacity === undefined
+            dateValues1?.available_capacity === undefined
               ? ""
               : dateValues1?.available_capacity <= 10 &&
                 dateValues1?.available_capacity !== 0
@@ -226,7 +218,8 @@ export default class Home extends Component {
           const avileClass3 =
             dateValues2?.available_capacity === undefined
               ? "text-dark"
-              : dateValues2?.available_capacity <= 10
+              : dateValues2?.available_capacity <= 10 &&
+                dateValues1?.available_capacity !== 0
               ? "text-warning"
               : dateValues2?.available_capacity > 10
               ? "text-success"
@@ -287,6 +280,8 @@ export default class Home extends Component {
                         <strong class={avileClass2}>
                           {dateValues1?.available_capacity
                             ? dateValues1?.available_capacity
+                            : dateValues2?.available_capacity === undefined
+                            ? "N/A"
                             : "BOOKED"}
                         </strong>
                       </div>
@@ -316,7 +311,7 @@ export default class Home extends Component {
     );
   };
   render() {
-    const { findButton, states } = this.state;
+    const { findButton } = this.state;
 
     return (
       <div>
